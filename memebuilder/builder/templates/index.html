@@ -1,0 +1,17 @@
+{% extends "template.html" %}
+
+{% block body %}
+    <h1>Memebuilder</h1>
+    <table>
+      <tr>
+        {% for name, image in images %}
+        <td>
+          <a href="{% url caption fn=image %}">
+            <img src="{% url thumbnail fn=image %}"/><br/>{{ name }}
+          </a>
+        </td>
+        {% if forloop.counter|divisibleby:5 %}</tr><tr>{% endif %}
+        {% endfor %}
+      </tr>
+    </table>
+{% endblock %}

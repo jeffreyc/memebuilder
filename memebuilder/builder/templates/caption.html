@@ -1,0 +1,30 @@
+{% extends "template.html" %}
+{% load staticfiles %}
+
+{% block title %}Memebuilder: Caption{% endblock %}
+
+{% block body %}
+    <h1>{{ name }}</h1>
+    <img src="{% static image %}"/><br/>
+    <form method="POST">
+      Top <input type="text" name="top"/> left|middle|right<br/>
+      Middle <input type="text" name="middle"/> left|middle|right<br/>
+      Bottom <input type="text" name="bottom"/> left|middle|right<br/>
+      Width <input type="text" name="width" size="3" value="{{ width }}"/> x Height <input type="text" name="height" size="3" value="{{ height }}"/> (constrained via JavaScript)<br/>
+      Font <select name="font">
+        {% for font in fonts %}
+        <option value="{{ font }}"{% ifequal font "Impact" %} selected="selected"{% endifequal %}>{{ font }}</option>
+        {% endfor %}
+      </select>
+      Font Size <input type="text" name="size" size="3" value="50"/>
+      <br/>
+      Color <select name="color">
+        {% for color in colors %}
+        <option value="{{ color }}"{% ifequal color "white" %} selected="selected"{% endifequal %}>{{ color }}</option>
+        {% endfor %}
+      </select>
+      <br/>
+      {% csrf_token %}
+      <input type="submit" value="Caption!"/>
+    </form>
+{% endblock %}

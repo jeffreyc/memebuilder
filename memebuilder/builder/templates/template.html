@@ -1,10 +1,23 @@
+{% load staticfiles %}
+
 <!DOCTYPE html>
 <html>
   <head>
     <title>{% block title %}Memebuilder{% endblock %}</title>
+    <link rel="stylesheet" href="{% static "builder.css" %}" type="text/css"/>
+    <script type="text/javascript" src="{% static "builder.js" %}"></script>
   </head>
   <body>
-    {% block body %}
-    {% endblock %}
+    <div id="container">
+      <div id="header">
+        {% block header %}Memebuilder{% endblock %}
+      </div>
+      <div id="content">
+        {% block body %}
+        {% endblock %}
+      </div>
+      <div id="footer">
+      </div>
+    </div>
   </body>
 </html>

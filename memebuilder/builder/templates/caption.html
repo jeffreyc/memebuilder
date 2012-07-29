@@ -1,30 +1,83 @@
 {% extends "template.html" %}
 {% load staticfiles %}
 
-{% block title %}Memebuilder: Caption{% endblock %}
+{% block title %}Memebuilder: Caption!{% endblock %}
 
 {% block body %}
-    <h1>{{ name }}</h1>
-    <img src="{% static image %}"/><br/>
-    <form method="POST">
-      Top <input type="text" name="top"/> left|middle|right<br/>
-      Middle <input type="text" name="middle"/> left|middle|right<br/>
-      Bottom <input type="text" name="bottom"/> left|middle|right<br/>
-      Width <input type="text" name="width" size="3" value="{{ width }}"/> x Height <input type="text" name="height" size="3" value="{{ height }}"/> (constrained via JavaScript)<br/>
-      Font <select name="font">
-        {% for font in fonts %}
-        <option value="{{ font }}"{% ifequal font "Impact" %} selected="selected"{% endifequal %}>{{ font }}</option>
-        {% endfor %}
-      </select>
-      Font Size <input type="text" name="size" size="3" value="50"/>
-      <br/>
-      Color <select name="color">
-        {% for color in colors %}
-        <option value="{{ color }}"{% ifequal color "white" %} selected="selected"{% endifequal %}>{{ color }}</option>
-        {% endfor %}
-      </select>
-      <br/>
-      {% csrf_token %}
-      <input type="submit" value="Caption!"/>
-    </form>
+        <div class="title">Caption: {{ name }}</div>
+        <div>
+          <img src="{% url scaled fn=image width=480 height=480 %}"/><br/>
+        </div>
+        <div>
+          <form method="POST">
+            <table class="caption">
+              <tr>
+                <td>Top</td>
+                <td><input class="text" type="text" name="top"/></td>
+                <td>
+                  <input id="ltr" type="radio" name="talign" value="left"/>
+                  <label for="ltr"><img src="{% static "images/left.png" %}" width="20" height="20"/></label>
+                  <input id="mtr" type="radio" name="talign" value="middle"/>
+                  <label for="mtr"><img src="{% static "images/center.png" %}" width="20" height="20"/></label>
+                  <input id="rtr" type="radio" name="talign" value="right"/>
+                  <label for="rtr"><img src="{% static "images/right.png" %}" width="20" height="20"/></label>
+                </td>
+              </tr>
+              <tr>
+                <td>Middle</td>
+                <td><input class="text" type="text" name="middle"/></td>
+                <td>
+                  <input id="lmr" type="radio" name="malign" value="left"/>
+                  <label for="lmr"><img src="{% static "images/left.png" %}" width="20" height="20"/></label>
+                  <input id="mmr" type="radio" name="malign" value="middle"/>
+                  <label for="mmr"><img src="{% static "images/center.png" %}" width="20" height="20"/></label>
+                  <input id="rmr" type="radio" name="malign" value="right"/>
+                  <label for="rmr"><img src="{% static "images/right.png" %}" width="20" height="20"/></label>
+                </td>
+              </tr>
+              <tr>
+                <td>Bottom</td>
+                <td><input class="text" type="text" name="bottom"/></td>
+                <td>
+                  <input id="lbr" type="radio" name="balign" value="left"/>
+                  <label for="lbr"><img src="{% static "images/left.png" %}" width="20" height="20"/></label>
+                  <input id="mbr" type="radio" name="balign" value="middle"/>
+                  <label for="mbr"><img src="{% static "images/center.png" %}" width="20" height="20"/></label>
+                  <input id="rbr" type="radio" name="balign" value="right"/>
+                  <label for="rbr"><img src="{% static "images/right.png" %}" width="20" height="20"/></label>
+                </td>
+              </tr>
+              <tr>
+                <td>Font</td>
+                <td>
+                  <select name="font">
+                    {% for font in fonts %}
+                    <option value="{{ font }}"{% ifequal font "Impact" %} selected="selected"{% endifequal %}>{{ font }}</option>
+                    {% endfor %}
+                  </select>
+                </td>
+                <td>
+                  Font <input type="text" name="size" size="3" value="50"/>
+                </td>
+              </tr>
+              <tr>
+                <td>Color</td>
+                <td colspan="2">
+                  <select name="color">
+                    {% for color in colors %}
+                    <option value="{{ color }}"{% ifequal color "white" %} selected="selected"{% endifequal %}>{{ color }}</option>
+                    {% endfor %}
+                  </select>
+                </td>
+              </tr>
+              <tr>
+                <td colspan="3">
+                  Width <input id="width" type="text" name="width" size="3" value="{{ width }}" onChange="constrainSize('width');"/> x Height <input id="height" type="text" name="height" size="3" value="{{ height }}" onChange="constrainSize('height');"/>
+                </td>
+              </tr>
+            </table>
+            {% csrf_token %}
+            <input type="submit" value="Caption!"/>
+          </form>
+        </div>
 {% endblock %}

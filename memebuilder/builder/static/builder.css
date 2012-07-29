@@ -1,0 +1,52 @@
+body{
+ background: #265d86;
+ font-family: Verdana,Arial,Helvetica,sans-serif;
+}
+
+#container{
+ background: #ffffff;
+ border-radius: 10px;
+ margin: 10px auto;
+ padding: 10px;
+ width: 920px;
+}
+
+#header{
+ background: #eeeeee;
+ border-radius: 10px;
+ font-size: 150%;
+ font-weight: bold;
+ margin: auto;
+ padding: 10px;
+ text-align: right;
+}
+
+#content{
+ background: #eeeeee;
+ border-radius: 10px;
+ font-size: 90%;
+ margin: 10px auto auto auto;
+ padding: 10px;
+}
+
+#footer{
+ background: #eeeeee;
+ border-radius: 10px;
+ margin: 10px auto auto auto;
+ padding: 10px;
+}
+
+.title{
+ font-size: 120%;
+ font-weight: bold;
+ padding: 10px;
+}
+
+.browse td{
+ text-align: center;
+ width: 20%;
+}
+
+.text{
+ width: 200px;
+}

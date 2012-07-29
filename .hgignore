@@ -3,4 +3,4 @@ syntax: glob
 *.pyc
 *~
 .DS_Store
-static/*
+static/templates/*

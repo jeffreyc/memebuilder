@@ -186,6 +186,8 @@ def caption(request, fn=None):
         im = Image.open(path.join(templates, fn))
         return shortcuts.render_to_response('caption.html',
                                             {'colors': get_colors(),
+                                             'default_font':
+                                                 settings.FONT_DEFAULT,
                                              'fonts': get_fonts(),
                                              'height': im.size[1],
                                              'image': fn,

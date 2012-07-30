@@ -52,7 +52,7 @@
                 <td>
                   <select name="font">
                     {% for font in fonts %}
-                    <option value="{{ font }}"{% ifequal font "Impact" %} selected="selected"{% endifequal %}>{{ font }}</option>
+                    <option value="{{ font }}"{% ifequal font default_font %} selected="selected"{% endifequal %}>{{ font }}</option>
                     {% endfor %}
                   </select>
                 </td>

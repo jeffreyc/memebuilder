@@ -154,5 +154,6 @@ LOGGING = {
     }
 }
 
+FONT_DEFAULT = 'Impact'
 FONT_DIR = '/Library/Fonts/'
 FONT_TYPE = '.ttf'

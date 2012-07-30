@@ -9,10 +9,10 @@ urlpatterns = patterns('builder.views',
     # url(r'^$', 'memebuilder.views.home', name='home'),
     # url(r'^memebuilder/', include('memebuilder.foo.urls')),
     url(r'^$', 'index'),
-    url(r'caption/(?P<fn>\w+.\w+)/$', 'caption', name='caption'),
-    url(r'scaled/(?P<fn>\w+.\w+)/(?P<width>\d+)/(?P<height>\d+)/$',
+    url(r'caption/(?P<fn>[\w-]+.\w+)/$', 'caption', name='caption'),
+    url(r'scaled/(?P<fn>[\w-]+.\w+)/(?P<width>\d+)/(?P<height>\d+)/$',
         'thumbnail', name='scaled'),
-    url(r'thumbnail/(?P<fn>\w+.\w+)/$', 'thumbnail', name='thumbnail'),
+    url(r'thumbnail/(?P<fn>[\w-]+.\w+)/$', 'thumbnail', name='thumbnail'),
 
     # Uncomment the admin/doc line below to enable admin documentation:
     # url(r'^admin/doc/', include('django.contrib.admindocs.urls')),

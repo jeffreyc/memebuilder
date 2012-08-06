@@ -33,6 +33,7 @@ def get_fonts():
     fonts = glob.glob('%s*%s' % (settings.FONT_DIR, settings.FONT_TYPE))
     for i in xrange(len(fonts)):
         fonts[i] = fonts[i].rsplit('/', 1)[-1].split('.')[0]
+    fonts.sort()
     return fonts
 
 

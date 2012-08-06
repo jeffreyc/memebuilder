@@ -5,10 +5,10 @@
 
 {% block body %}
         <div class="title">Caption: {{ name }}</div>
-        <div>
+        <div class="left">
           <img src="{% url scaled fn=image width=480 height=480 %}"/><br/>
         </div>
-        <div>
+        <div class="right">
           <form method="POST">
             <table class="caption">
               <tr>
@@ -80,4 +80,5 @@
             <input type="submit" value="Caption!"/>
           </form>
         </div>
+        <div class="clear"></div>
 {% endblock %}

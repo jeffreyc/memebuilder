@@ -1,16 +1,210 @@
-"""
-This file demonstrates writing tests using the unittest module. These will pass
-when you run "manage.py test".
+import os
+from os import path
 
-Replace this with more appropriate tests for your application.
-"""
+import dingus
+from django import test
+from django.conf import settings
+from PIL import ImageColor
 
-from django.test import TestCase
+from . import views
 
 
-class SimpleTest(TestCase):
-    def test_basic_addition(self):
-        """
-        Tests that 1 + 1 always equals 2.
-        """
-        self.assertEqual(1 + 1, 2)
+class TestGetColors(test.SimpleTestCase):
+    def setUp(self):
+        self.colormap = ImageColor.colormap
+        ImageColor.colormap = {'red': '#FF0000',
+                               'green': '#00FF00',
+                               'blue': '#0000FF',}
+
+    def tearDown(self):
+        ImageColor.colormap = self.colormap
+
+    def test_get_colors(self):
+        self.assertEqual(views.get_colors(),
+                         ['blue', 'green', 'red',])
+
+
+class TestGetFonts(test.SimpleTestCase):
+    def setUp(self):
+        self.FONT_DIR = settings.FONT_DIR
+        self.FONT_TYPE = settings.FONT_TYPE
+        settings.FONT_DIR = path.join(path.dirname(__file__), 'fixtures',
+                                      'test', 'fonts')
+        settings.FONT_DIR += path.sep
+        settings.FONT_TYPE = '.ttf'
+
+    def tearDown(self):
+        settings.FONT_DIR = self.FONT_DIR
+        self.FONT_TYPE = settings.FONT_TYPE
+
+    def test_fontdir_has_non_ttf(self):
+        fonts = os.listdir(settings.FONT_DIR)
+        assert 'Arial.pil' in fonts
+
+    def test_get_fonts(self):
+        self.assertEqual(views.get_fonts(),
+                         ['Courier', 'Impact',])
+
+
+class TestViews(test.TestCase):
+    def setUp(self):
+        self.Image = views.Image
+        views.Image = dingus.Dingus()
+        self.ImageDraw = views.ImageDraw
+        views.ImageDraw = dingus.Dingus()
+        self.ImageFont = views.ImageFont
+        views.ImageFont = dingus.Dingus()
+        self.balance = views.balance
+        views.balance = dingus.Dingus(return_value=(['a'], [(0, 0)]))
+        self.wrap = views.wrap
+        views.wrap = dingus.Dingus(return_value=(['a'], [(0, 0)]))
+        self.STATICFILES_DIRS = settings.STATICFILES_DIRS
+        settings.STATICFILES_DIRS = (path.join(path.dirname(__file__),
+                                               'fixtures', 'test'),)
+
+    def tearDown(self):
+        views.Image = self.Image
+        views.ImageDraw = self.ImageDraw
+        views.ImageFont = self.ImageFont
+        views.balance = self.balance
+        views.wrap = self.wrap
+        settings.STATICFILES_DIRS = self.STATICFILES_DIRS
+
+    def test_caption_get(self):
+        response = self.client.get('/caption/business_cat.jpg/')
+        self.assertContains(response, '<form method="POST">', status_code=200)
+
+    def test_caption_post(self):
+        response = self.client.post('/caption/business_cat.jpg/',
+                                    {'balign': 'right',
+                                     'bottom': 'This is the bottom caption.',
+                                     'color': 'white',
+                                     'font': 'Impact',
+                                     'malign': 'middle',
+                                     'middle': 'This is the middle caption.',
+                                     'size': '48',
+                                     'talign': 'left',
+                                     'top': 'This is the top caption.',})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(views.ImageFont.calls[0][0], 'truetype')
+        assert 'Impact' in views.ImageFont.calls[0][1][0]
+        self.assertEqual(views.ImageFont.calls[0][1][1], 48)
+        self.assertEqual(views.wrap.calls[0][1][2], 'This is the top caption.')
+        self.assertEqual(views.wrap.calls[0][1][4], 'left')
+        self.assertEqual(views.wrap.calls[1][1][2],
+                         'This is the middle caption.')
+        self.assertEqual(views.wrap.calls[1][1][4], 'middle')
+        self.assertEqual(views.wrap.calls[2][1][2],
+                         'This is the bottom caption.')
+        self.assertEqual(views.wrap.calls[2][1][4], 'right')
+        for i in xrange(3):
+            self.assertEqual(views.ImageDraw.Draw().calls[i][0], 'text')
+            self.assertEqual(views.ImageDraw.Draw().calls[i][2]['fill'],
+                             'white')
+
+    def test_caption_post_resizes(self):
+        response = self.client.post('/caption/business_cat.jpg/',
+                                    {'balign': 'right',
+                                     'bottom': 'This is the bottom caption',
+                                     'color': 'white',
+                                     'font': 'Impact',
+                                     'height': '123',
+                                     'malign': 'middle',
+                                     'middle': 'This is the middle caption',
+                                     'size': '48',
+                                     'talign': 'left',
+                                     'top': 'This is the top caption.',
+                                     'width': '234',})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(views.Image.open().calls[0][0], 'resize')
+        self.assertEqual(views.Image.open().calls[0][1][0], (234, 123))
+
+    def test_index(self):
+        response = self.client.get('/')
+        self.assertContains(response, '/thumbnail/business_cat.jpg/',
+                            status_code=200)
+
+    def test_scaled(self):
+        response = self.client.get('/scaled/business_cat.jpg/100/100/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(views.Image.open().calls[0][0], 'thumbnail')
+        self.assertEqual(views.Image.open().calls[0][1][0], (100, 100))
+
+    def test_thumbnail(self):
+        response = self.client.get('/thumbnail/business_cat.jpg/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(views.Image.calls[0][0], 'open')
+        assert views.Image.calls[0][1][0].endswith('business_cat.jpg')
+        self.assertEqual(views.Image.open().calls[0][0], 'thumbnail')
+        self.assertEqual(views.Image.open().calls[0][1][0],
+                         views.thumbnail_size)
+        self.assertEqual(views.Image.open().calls[1][0], 'save')
+
+
+class TestUtils(test.SimpleTestCase):
+    def test_balance(self):
+        self.assertEqual(views.balance(([], [(0, 20), (0, 30)])),
+                         ([], [(0, 15), (0, 25)]))
+        self.assertEqual(views.balance(([], [(0, 20), (0, 30), (0, 40)])),
+                         ([], [(0, 10), (0, 20), (0, 30)]))
+        self.assertEqual(views.balance(([], [(0, 20), (0, 30), (0, 40),
+                                             (0, 50)])),
+                         ([], [(0, 5), (0, 15), (0, 25), (0, 35)]))
+
+    def test_get_pos(self):
+        self.assertEqual(views.get_pos((100, 100), (50, 10), 'top', 'left', 10),
+                         (10, 10))
+        self.assertEqual(views.get_pos((100, 100), (50, 10), 'middle', 'left',
+                                       0),
+                         (10, 45))
+        self.assertEqual(views.get_pos((100, 100), (50, 10), 'bottom', 'left',
+                                       10),
+                         (10, 80))
+        self.assertEqual(views.get_pos((100, 100), (50, 10), 'top', 'middle',
+                                       10),
+                         (25, 10))
+        self.assertEqual(views.get_pos((100, 100), (50, 10), 'middle', 'middle',
+                                       0),
+                         (25, 45))
+        self.assertEqual(views.get_pos((100, 100), (50, 10), 'bottom', 'middle',
+                                       10),
+                         (25, 80))
+        self.assertEqual(views.get_pos((100, 100), (50, 10), 'top', 'right',
+                                       10),
+                         (40, 10))
+        self.assertEqual(views.get_pos((100, 100), (50, 10), 'middle', 'right',
+                                       0),
+                         (40, 45))
+        self.assertEqual(views.get_pos((100, 100), (50, 10), 'bottom', 'right',
+                                       10),
+                         (40, 80))
+
+    def test_get_pos_respects_offset(self):
+        self.assertEqual(views.get_pos((100, 100), (50, 10), 'top', 'left', 20),
+                         (10, 20))
+        self.assertEqual(views.get_pos((100, 100), (50, 10), 'middle', 'left',
+                                       10),
+                         (10, 55))
+        self.assertEqual(views.get_pos((100, 100), (50, 10), 'bottom', 'left',
+                                       20),
+                         (10, 70))
+
+    def test_name_for_image(self):
+        self.assertEqual(views.name_for_image('business_cat.jpg'),
+                         'Business Cat')
+
+    def test_wrap_no_wrap(self):
+        font = dingus.Dingus(getsize__returns=(30, 10))
+        self.assertEqual(views.wrap((100, 100), font, 'abc', 'top', 'left', 10),
+                         (['abc'], [(10, 10)]))
+
+    def test_wrap(self):
+        # TODO:
+        # wrap once top
+        # wrap twice top
+        # wrap once middle
+        # wrap twice middle
+        # wrap once bottom
+        # wrap twice bottom
+        # wrap long word
+        pass

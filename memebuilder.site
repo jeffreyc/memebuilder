@@ -1,0 +1,35 @@
+# Sample Apache site for running under Apache with mod_wsgi.
+
+<VirtualHost *:80>
+        ServerName host.domain
+        ServerAlias www.host.domain
+        ServerAlias server.host.domain
+        ServerAdmin support@host.domain
+
+        Alias /static /home/memebuilder/static
+        <Directory /home/memebuilder/static>
+                Order deny,allow
+                Allow from all
+        </Directory>
+
+        WSGIDaemonProcess memebuilder processes=2 maximum-requests=5000 display-name=memebuilder python-path=/home/memebuilder/memebuilder
+        WSGIScriptAlias / /home/memebuilder/memebuilder/memebuilder/wsgi.py
+        WSGIProcessGroup memebuilder
+        WSGIApplicationGroup mb
+        WSGIScriptReloading off
+
+        <Directory /home/memebuilder/memebuilder/memebuilder>
+                <Files wsgi.py>
+                        Order deny,allow
+                        Allow from all
+                </Files>
+        </Directory>
+
+        ErrorLog ${APACHE_LOG_DIR}/memebuilder/error.log
+
+        # Possible values include: debug, info, notice, warn, error, crit,
+        # alert, emerg.
+        LogLevel warn
+
+        CustomLog ${APACHE_LOG_DIR}/memebuilder/access.log proxy_combined
+</VirtualHost>

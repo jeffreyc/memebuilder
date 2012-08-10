@@ -109,7 +109,9 @@ def wrap(im_size, font, text, loc, align, offset=0):
         if font.getsize(' '.join(line + [words[i]]))[0] > im_size[0] - 20:
             break
         line.append(words[i])
-    if i == 0 or i == len(words)-1 and loc == 'bottom':
+    if i == 0 and loc != 'bottom' or i == len(words)-1 and loc == 'bottom':
+        # First (or last, for bottom-aligned) word is too long to fit, wrap by
+        # letters instead.
         if loc == 'bottom':
             range_ = xrange(len(words[i])-1, -1, -1)
         else:

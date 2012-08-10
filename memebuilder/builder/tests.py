@@ -9,6 +9,83 @@ from PIL import ImageColor
 from . import views
 
 
+class MultiValueDingus(dingus.Dingus):
+    """A Dingus that supports returning different return values on subsequent
+    calls.
+
+    A MultiValueDingus assumes that any return value argument is a list,
+    and treats it as such.
+
+    Dingus is not designed to support multiple return values, so this may seem
+    a bit hacky. It should only be used when multiple return values are
+    necessary.
+
+    >>> d = MultiValueDingus(return_value=['a', 'b'])
+    >>> d()
+    'a'
+    >>> d()
+    'b'
+    >>> d()
+    'b'
+
+    >>> d = MultiValueDingus(return_value=[['a', 'b'], ['c', 'd'], ['e', 'f']])
+    >>> d()
+    ['a', 'b']
+    >>> d()
+    ['c', 'd']
+    >>> d()
+    ['e', 'f']
+    >>> d()
+    ['e', 'f']
+
+    >>> d = MultiValueDingus(foo__returns=['a', 'b'])
+    >>> d.foo()
+    'a'
+    >>> d.foo()
+    'b'
+    >>> d.foo()
+    'b'
+
+    """
+    def _get_return_value(self):
+        # Overrides Dingus._get_return_value to return a value popped off of
+        # self._return_values. It tracks the number of values in the list
+        # so it knows when to stop popping values, thus supporting returning
+        # lists.
+        if self._return_value is dingus.NoReturnValue:
+            self._return_value = self._create_child('()')
+        if self._return_value_count == 0:
+            # We've popped all there is to pop. Keep returning the last value.
+            return self._return_value
+        self._return_value_count -= 1
+        if self._return_value_count == 0:
+            # We're down to the last value. Turn [value] into value and return.
+            self._return_value = self._return_value.pop(0)
+            return self._return_value
+        # We have more than one value remaining. Pop and return.
+        return self._return_value.pop(0)
+
+    def _set_return_value(self, value):
+        self._return_value_count = len(value)
+        self._return_value = value
+
+    return_value = property(_get_return_value, _set_return_value)
+
+    def __call__(self, *args, **kwargs):
+        # Overrides Dingus.__call__ by caching self.return_value to avoid
+        # accessing the property 2-3 times and thus getting 2-3 different
+        # values.
+        retval = self.return_value
+        self._log_call('()', args, kwargs, retval)
+        if self._parent:
+            self._parent._log_call(self._short_name,
+                                   args,
+                                   kwargs,
+                                   retval)
+
+        return retval
+
+
 class TestGetColors(test.SimpleTestCase):
     def setUp(self):
         self.colormap = ImageColor.colormap
@@ -198,13 +275,70 @@ class TestUtils(test.SimpleTestCase):
         self.assertEqual(views.wrap((100, 100), font, 'abc', 'top', 'left', 10),
                          (['abc'], [(10, 10)]))
 
-    def test_wrap(self):
-        # TODO:
-        # wrap once top
-        # wrap twice top
-        # wrap once middle
-        # wrap twice middle
-        # wrap once bottom
-        # wrap twice bottom
-        # wrap long word
-        pass
+    def test_wrap_once_top(self):
+        font = MultiValueDingus(getsize__returns=[(120, 10),
+                                                  (40, 10),
+                                                  (80, 10),
+                                                  (120, 10),
+                                                  (80, 10),
+                                                  (40, 10)])
+        self.assertEqual(views.wrap((100, 100), font, 'abc def ghi', 'top',
+                                    'left', 10),
+                         (['abc def', 'ghi'], [(10, 10), (10, 20)]))
+
+    def test_wrap_twice_top(self):
+        font = MultiValueDingus(getsize__returns=[(210, 10),
+                                                  (70, 10),
+                                                  (140, 10),
+                                                  (210, 10),
+                                                  (140, 10),
+                                                  (70, 10),
+                                                  (140, 10),
+                                                  (140, 10),
+                                                  (70, 10),
+                                                  (70, 10),
+                                                  (70, 10),
+                                                  (70, 10)])
+        self.assertEqual(views.wrap((100, 100), font, 'abc def ghi', 'top',
+                                    'left', 10),
+                         (['abc', 'def', 'ghi'],
+                          [(10, 10), (10, 20), (10, 30)]))
+
+    def test_wrap_once_bottom(self):
+        font = MultiValueDingus(getsize__returns=[(120, 10),
+                                                  (40, 10),
+                                                  (80, 10),
+                                                  (120, 10),
+                                                  (80, 10),
+                                                  (40, 10)])
+        self.assertEqual(views.wrap((100, 100), font, 'abc def ghi', 'bottom',
+                                    'left', 10),
+                         (['def ghi', 'abc'], [(10, 80), (10, 70)]))
+
+    def test_wrap_long_word_top(self):
+        font = MultiValueDingus(getsize__returns=[(120, 10),
+                                                  (120, 10),
+                                                  (40, 10),
+                                                  (80, 10),
+                                                  (120, 10),
+                                                  (120, 10),
+                                                  (40, 10),
+                                                  (40, 10),
+                                                  (80, 10)])
+        self.assertEqual(views.wrap((100, 100), font, 'abc', 'top',
+                                    'left', 10),
+                         (['ab', 'c'], [(10, 10), (10, 20)]))
+
+    def test_wrap_long_word_bottom(self):
+        font = MultiValueDingus(getsize__returns=[(120, 10),
+                                                  (120, 10),
+                                                  (40, 10),
+                                                  (80, 10),
+                                                  (120, 10),
+                                                  (120, 10),
+                                                  (40, 10),
+                                                  (40, 10),
+                                                  (80, 10)])
+        self.assertEqual(views.wrap((100, 100), font, 'abc', 'bottom',
+                                    'left', 10),
+                         (['bc', 'a'], [(10, 80), (10, 70)]))
